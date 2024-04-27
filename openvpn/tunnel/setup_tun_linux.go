@@ -20,6 +20,7 @@
 package tunnel
 
 import (
+	gerrors "errors"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -52,7 +53,17 @@ type tunDevice struct {
 
 // Setup sets the tunel up
 func (service *LinuxTunDeviceManager) Setup(configuration *config.GenericConfig) error {
+
+	if _, err := os.Stat(configuration.GetFullScriptPath(config.SimplePath("nonpriv-ip"))); gerrors.Is(err, os.ErrNotExist) {
+		return errors.Wrap(err, "required nonpriv-ip script was not found")
+	}
+
 	configuration.SetScriptParam("iproute", config.SimplePath("nonpriv-ip"))
+
+	if _, err := os.Stat(configuration.GetFullScriptPath(config.SimplePath("prepare-env.sh"))); gerrors.Is(err, os.ErrNotExist) {
+		return errors.Wrap(err, "required prepare-env.sh script was not found")
+	}
+
 	service.scriptSetup = configuration.GetFullScriptPath(config.SimplePath("prepare-env.sh"))
 
 	err := service.createDeviceNode()
