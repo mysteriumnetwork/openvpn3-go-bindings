@@ -54,11 +54,14 @@ type tunDevice struct {
 // Setup sets the tunel up
 func (service *LinuxTunDeviceManager) Setup(configuration *config.GenericConfig) error {
 
-	if _, err := os.Stat(configuration.GetFullScriptPath(config.SimplePath("nonpriv-ip"))); gerrors.Is(err, os.ErrNotExist) {
-		return errors.Wrap(err, "required nonpriv-ip script was not found")
-	}
+	if os.Geteuid() != 0 { // 0 == root
+		// only need to pass this option when running as non-root user
+		if _, err := os.Stat(configuration.GetFullScriptPath(config.SimplePath("nonpriv-ip"))); gerrors.Is(err, os.ErrNotExist) {
+			return errors.Wrap(err, "required nonpriv-ip script was not found")
+		}
 
-	configuration.SetScriptParam("iproute", config.SimplePath("nonpriv-ip"))
+		configuration.SetScriptParam("iproute", config.SimplePath("nonpriv-ip"))
+	}
 
 	if _, err := os.Stat(configuration.GetFullScriptPath(config.SimplePath("prepare-env.sh"))); gerrors.Is(err, os.ErrNotExist) {
 		return errors.Wrap(err, "required prepare-env.sh script was not found")
