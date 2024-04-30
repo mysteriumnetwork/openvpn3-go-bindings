@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -54,7 +55,7 @@ type tunDevice struct {
 // Setup sets the tunel up
 func (service *LinuxTunDeviceManager) Setup(configuration *config.GenericConfig) error {
 
-	if os.Geteuid() != 0 { // 0 == root
+	if (runtime.GOOS == "linux" && os.Geteuid() != 0) || runtime.GOOS != "linux" { // 0 == root
 		// only need to pass this option when running as non-root user
 		if _, err := os.Stat(configuration.GetFullScriptPath(config.SimplePath("nonpriv-ip"))); gerrors.Is(err, os.ErrNotExist) {
 			return errors.Wrap(err, "required nonpriv-ip script was not found")
